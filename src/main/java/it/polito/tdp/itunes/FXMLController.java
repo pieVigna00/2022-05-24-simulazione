@@ -5,7 +5,11 @@
 package it.polito.tdp.itunes;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
+
+import it.polito.tdp.itunes.model.Arco;
+import it.polito.tdp.itunes.model.Genre;
 import it.polito.tdp.itunes.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -37,7 +41,7 @@ public class FXMLController {
     private ComboBox<?> cmbCanzone; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbGenere"
-    private ComboBox<?> cmbGenere; // Value injected by FXMLLoader
+    private ComboBox<Genre> cmbGenere; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtMemoria"
     private TextField txtMemoria; // Value injected by FXMLLoader
@@ -52,13 +56,23 @@ public class FXMLController {
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
-
+    	model.buildGraph(this.cmbGenere.getValue());
+    	if(this.cmbGenere.getValue()==null) {
+    		txtResult.setText("DEVI SELEZIONARE UN GENERE DAL MENU A TENDINA!! \n");
+    	}
+    	txtResult.setText("Grafo creato correttamente \n");
+    	txtResult.appendText("Il grafo ha: "+model.getNumVertici()+" vertici \n");
+    	txtResult.appendText("Il grafo ha: "+model.getNumArchi()+" archi \n");
+    	
     }
 
     @FXML
     void doDeltaMassimo(ActionEvent event) {
-    	
-    	
+    	List<Arco> result=this.model.getMax();
+    	txtResult.setText("COPPIA CANZONI DELTA MASSIMO: \n");
+    	for(Arco a: result) {
+    		txtResult.appendText(a.getTrack1()+"*****"+a.getTrack2()+"->"+a.getPreso()+"\n");
+    	}
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -75,6 +89,7 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	this.cmbGenere.getItems().addAll(this.model.getAllGenre());
     }
 
 }

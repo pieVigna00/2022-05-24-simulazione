@@ -7,7 +7,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
 import it.polito.tdp.itunes.model.Album;
+import it.polito.tdp.itunes.model.Arco;
 import it.polito.tdp.itunes.model.Artist;
 import it.polito.tdp.itunes.model.Genre;
 import it.polito.tdp.itunes.model.MediaType;
@@ -76,7 +79,7 @@ public class ItunesDAO {
 		return result;
 	}
 	
-	public List<Track> getAllTracks(){
+	public List<Track> getAllTracks(Map<Integer, Track> mappaTrack){
 		final String sql = "SELECT * FROM Track";
 		List<Track> result = new ArrayList<Track>();
 		
@@ -86,9 +89,11 @@ public class ItunesDAO {
 			ResultSet res = st.executeQuery();
 
 			while (res.next()) {
-				result.add(new Track(res.getInt("TrackId"), res.getString("Name"), 
+				Track track= new Track(res.getInt("TrackId"), res.getString("Name"), 
 						res.getString("Composer"), res.getInt("Milliseconds"), 
-						res.getInt("Bytes"),res.getDouble("UnitPrice")));
+						res.getInt("Bytes"),res.getDouble("UnitPrice"));
+				result.add(track);
+				mappaTrack.put(res.getInt("TrackId"), track);
 			
 			}
 			conn.close();
@@ -135,6 +140,56 @@ public class ItunesDAO {
 		} catch (SQLException e) {
 			e.printStackTrace();
 			throw new RuntimeException("SQL Error");
+		}
+		return result;
+	}
+	public List<Track> getTrackByGenre(Genre genere){
+		String sql="SELECT DISTINCT * "
+				+ "FROM track "
+				+ "WHERE GenreId=?";
+		List<Track> result = new ArrayList<>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, genere.getGenreId());
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				result.add(new Track(res.getInt("TrackId"), res.getString("Name"), 
+						res.getString("Composer"), res.getInt("Milliseconds"), 
+						res.getInt("Bytes"),res.getDouble("UnitPrice")));
+			
+			}
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+		return result;
+	}
+	public List<Arco> getAllArchi(Map<Integer, Track> mappaTrack, Genre genere){
+		String sql="SELECT t1.TrackId AS track1, t2.TrackId AS track2, (t1.Milliseconds-t2.Milliseconds) AS diff "
+				+ "FROM track t1, track t2 "
+				+ "WHERE t1.TrackId!=t2.TrackId AND t1.GenreId=? AND t1.GenreId=t2.GenreId AND t1.MediaTypeId=t2.MediaTypeId "
+				+ "HAVING diff>0";
+		List<Arco> result = new ArrayList<>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, genere.getGenreId());
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				Arco arco= new Arco(mappaTrack.get(res.getInt("track1")),mappaTrack.get(res.getInt("track2")), res.getDouble("diff"));
+				result.add(arco);
+			
+			}
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 		return result;
 	}
